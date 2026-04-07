@@ -10,16 +10,28 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const allowedOrigin = process.env.FRONTEND_URL || '*';
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',').map((o) => o.trim())
+  : ['*'];
 
 app.use(
   cors({
-    origin: allowedOrigin,
+    origin: (origin, callback) => {
+      // allow requests with no origin (mobile apps, curl, Render health checks)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS blocked: ${origin}`));
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   })
 );
+
+// handle preflight for all routes
+app.options('*', cors());
 
 app.use(express.json());
 app.use('/api/auth', authRoutes);
