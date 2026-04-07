@@ -3,11 +3,15 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+// Strip accidental 'KEY = value' formatting from env var
+const rawUrl = process.env.DATABASE_URL || '';
+const DATABASE_URL = rawUrl.includes('=') ? rawUrl.split('=').slice(1).join('=').trim() : rawUrl.trim();
+
 let connection;
 
-if (process.env.DATABASE_URL) {
+if (DATABASE_URL) {
   // ✅ Railway / Production
-  connection = mysql.createPool(process.env.DATABASE_URL);
+  connection = mysql.createPool(DATABASE_URL);
 } else {
   // ✅ Local development
   connection = mysql.createPool({
